@@ -7,7 +7,7 @@ const f=n=>{if(n==null||typeof n!=='number'||!isFinite(n))return'—';const a=Ma
 const pct=n=>n==null||!isFinite(n)?'—':(n>0?'+':'')+n.toFixed(1)+'%';
 const neutral=c=>/gravity|vault tech/i.test(c.name);
 const chg=c=>(!neutral(c)&&c.op&&c.price)?(c.price/c.op-1)*100:null;
-const key=c=>c.id||c.name;
+const key=c=>c.key||c.id||c.name;
 function scol(c){const s=c.status||'';if(/ambiguous|assumed/i.test(s))return's-amb';if(/dead|illiquid|near zero|shutdown|offline/i.test(s))return's-dead';if(/rebrand|migrat|merged|swap|formerly/i.test(s))return's-reb';return''}
 function slab(c){const k=scol(c);return k=='s-amb'?'Unsure match':k=='s-dead'?'Dead / illiquid':k=='s-reb'?'Rebranded':''}
 function grad(p){if(p==null||!isFinite(p))return'#333';const t=Math.max(0,Math.min(1,1+p/100));return`hsl(${t*120},75%,48%)`}
@@ -19,12 +19,10 @@ const num=v=>typeof v==='number'&&isFinite(v)?v:null;
 const str=(v,n=200)=>typeof v==='string'?v.slice(0,n):'';
 function cleanAdded(x){if(!x||typeof x!=='object'||typeof x.id!=='string'||!ID_RE.test(x.id))return null;
  return{name:str(x.name,100)||x.id,ticker:str(x.ticker,20).toUpperCase(),id:x.id,added:true,price:num(x.price),mcap:num(x.mcap),vol:num(x.vol),ath:num(x.ath),athdate:/^\d{4}-\d{2}-\d{2}$/.test(x.athdate)?x.athdate:'',below:num(x.below),supply:num(x.supply),utility:'Added by you',status:''}}
-function load(k){try{const v=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(v)?v.slice(0,500):[]}catch(_){return[]}}
-function save(){try{localStorage.setItem('cw_added',JSON.stringify(A));localStorage.setItem('cw_hidden',JSON.stringify(H))}catch(_){}}
 // ---- render ----
 const pill=c=>h('span',{class:'pill',style:{background:grad(c.below)}},pct(c.below));
-const chips=c=>[c.added&&h('span',{class:'st s-add'},'Added by you'),' ',scol(c)&&h('span',{class:'st '+scol(c)},slab(c)),' ',!c.id&&h('span',{class:'st'},'static')];
-const rmb=c=>h('button',{class:'rm',onclick:e=>{e.stopPropagation();removeCoin(key(c))}},(c.added?'Remove ':'Hide ')+(c.ticker||c.name));
+const chips=c=>[c.added&&h('span',{class:'st s-add'},c.addedBy&&me&&c.addedBy===me.id?'Added by you':'Added by '+(c.addedEmail||'a member')),' ',scol(c)&&h('span',{class:'st '+scol(c)},slab(c)),' ',!c.id&&h('span',{class:'st'},'static')];
+const rmb=c=>me?h('button',{class:'rm',onclick:e=>{e.stopPropagation();removeCoin(key(c))}},'Remove '+(c.ticker||c.name)):h('span',{class:'hint'},'Sign in to remove');
 const nm=(c,cl)=>h('div',{class:cl},h('b',{},c.name),h('span',{class:'tk'},c.ticker||''));
 function details(c,ch,cl,full){const L=(k,...v)=>[h('b',{},k+': '),...v,h('br')];
  return[...(full?[...L('vs 2023',h('span',{class:cl},pct(ch)),' (2023: '+f(c.op)+')'),...L('ATH',f(c.ath)+' ('+(c.athdate||'—')+')'),...L('24h volume',f(c.vol))]:[...L('2023 price',f(c.op)+' · ATH date: '+(c.athdate||'—'))]),
@@ -40,7 +38,7 @@ function render(){const q=$('#q').value.toLowerCase();const r=C.filter(c=>(c.nam
   cl.append(h('div',{class:'k',onclick:()=>toggle(i)},h('div',{class:'h'},nm(c,cc),h('div',{},chips(c))),
    h('div',{class:'g'},h('div',{},h('span',{},'Price'),h('b',{class:cc},f(c.price))),h('div',{},h('span',{},'% below ATH'),pill(c)),h('div',{},h('span',{},'Market cap'),f(c.mcap))),
    open.has(i)?h('div',{class:'x'},details(c,ch,cc,true)):h('div',{class:'hint'},'Tap for details ▾')))});
- $('#so').value=sortK;$('#sd').textContent=sortD>0?'▲':'▼';const rh=$('#rh');rh.hidden=!H.length;rh.textContent='Restore hidden ('+H.length+')'}
+ $('#so').value=sortK;$('#sd').textContent=sortD>0?'▲':'▼';const rh=$('#rh');rh.hidden=!H.length||!me;rh.textContent='Removed coins ('+H.length+')';renderRemoved();renderAuth()}
 function cards(){const cmp=C.map(c=>[c,chg(c)]).filter(x=>x[1]!=null);const up=cmp.filter(x=>x[1]>=0).length;
  const tot=C.reduce((s,c)=>s+(c.mcap||0),0);const b=C.map(c=>c.below).filter(x=>x!=null&&isFinite(x)).sort((a,b)=>a-b);const med=!b.length?null:b.length%2?b[(b.length-1)/2]:(b[b.length/2-1]+b[b.length/2])/2;
  cmp.sort((a,b)=>b[1]-a[1]);const li=a=>a.flatMap(([c,p])=>[(c.ticker||c.name)+' ',h('span',{class:p>=0?'up':'dn'},pct(p)),h('br')]);
@@ -51,9 +49,22 @@ function cards(){const cmp=C.map(c=>[c,chg(c)]).filter(x=>x[1]!=null);const up=c
   card('Top gainers',h('div',{},li(cmp.slice(0,3)))),card('Top decliners',h('div',{},li(cmp.slice(-3).reverse()))))}
 const rebuild=()=>{C=[...B,...A].filter(c=>!H.includes(key(c)));open.clear()};
 const refresh=()=>{rebuild();cards();render()};
-function removeCoin(k){const c=[...B,...A].find(x=>key(x)===k);if(!c)return;
- if(c.added){if(!confirm('Remove '+c.name+' from your watchlist?'))return;A=A.filter(x=>key(x)!==k)}
- else{if(!confirm('Hide '+c.name+'? You can bring it back with "Restore hidden".'))return;H.push(k)}save();refresh()}
+async function removeCoin(k){const c=[...B,...A].find(x=>key(x)===k);if(!c||!me)return;
+ if(!confirm('Remove '+c.name+' from the shared list? Anyone signed in can restore it.'))return;
+ const {error}=await sb.from('coins').update({removed:true}).eq('coingecko_id',k);if(error)return alert('Could not remove: '+error.message);await reload()}
+async function restoreCoin(k){if(!me)return;const c=allRows.find(x=>x.key===k);if(!confirm('Restore '+(c?c.name:k)+'?'))return;
+ const {error}=await sb.from('coins').update({removed:false}).eq('coingecko_id',k);if(error)return alert('Could not restore: '+error.message);await reload()}
+function renderRemoved(){const box=$('#removed');box.hidden=!showRemoved||!me||!H.length;if(box.hidden)return;
+ clear(box).append(h('h3',{},'Removed coins'),...allRows.filter(c=>H.includes(c.key)).map(c=>h('div',{class:'ar'},h('span',{},h('b',{},c.name),h('span',{class:'tk'},c.ticker||'')),h('button',{class:'rm ok',onclick:()=>restoreCoin(c.key)},'Restore'))))}
+function renderAuth(){const a=clear($('#auth'));
+ if(me)a.append(h('span',{class:'mu'},'Signed in as ',h('b',{},me.email||'')),' ',h('button',{class:'btn',onclick:async()=>{await sb.auth.signOut();}},'Sign out'));
+ else a.append(h('form',{class:'si',onsubmit:async e=>{e.preventDefault();const em=e.target.elements.em.value.trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em))return authMsg('Enter a valid email.','dn');
+  authMsg('Sending…');const {error}=await sb.auth.signInWithOtp({email:em,options:{emailRedirectTo:SITE}});authMsg(error?('Could not send link: '+error.message):'Check your email for a sign-in link.',error?'dn':'up')}},
+  h('input',{name:'em',type:'email',placeholder:'Email to sign in',autocomplete:'email',required:true}),h('button',{class:'btn',type:'submit'},'Sign in')),h('div',{id:'am'}));
+ $('#addbox').hidden=!me;$('#addhint').hidden=!!me}
+function authMsg(t,c){const m=$('#am');if(m)clear(m).append(h('div',{class:c||'mu'},t))}
+function renderLog(){const l=clear($('#log'));if(!logRows.length)return l.append(h('div',{class:'mu'},'No changes yet.'));
+ l.append(...logRows.map(r=>h('div',{class:'lg'},h('span',{class:'lt'},new Date(r.created_at).toLocaleString()),h('span',{},h('b',{},str(r.user_email,120)||'someone'),' ',h('span',{class:'la la-'+r.action},r.action==='add'?'added':r.action==='remove'?'removed':'restored'),' ',str(r.coin_name,100)||r.coingecko_id))))}
 const msg=(t,cls)=>clear($('#ar')).append(h('div',{class:cls||'mu'},t));
 let st;
 function onSearch(e){clearTimeout(st);const q=e.target.value.trim();if(q.length<2){clear($('#ar'));return}
@@ -63,22 +74,37 @@ function onSearch(e){clearTimeout(st);const q=e.target.value.trim();if(q.length<
   clear($('#ar')).append(...list.map(c=>{let img=null;try{const u=new URL(c.thumb);if(u.protocol==='https:'&&/(^|\.)coingecko\.com$/.test(u.hostname))img=h('img',{src:u.href,alt:'',referrerpolicy:'no-referrer'})}catch(_){}
    return h('div',{class:'ar',onclick:()=>addCoin(c.id)},h('span',{},img,h('b',{},str(c.name,100)),h('span',{class:'tk'},str(c.symbol,20))),h('span',{class:'mu'},have.has(c.id)?(H.includes(c.id)?'hidden':'on list'):'+ Add'))}))}
   catch(_){msg('Search failed (CoinGecko rate limit?). Try again shortly.','dn')}},400)}
-async function addCoin(id){if(!ID_RE.test(id))return;const done=()=>{clear($('#ar'));$('#aq').value=''};
- if(H.includes(id)){H=H.filter(x=>x!==id);save();refresh();return done()}
- if([...B,...A].some(c=>c.id===id))return msg('Already on your list.');
- try{const m=(await(await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids='+encodeURIComponent(id),{referrerPolicy:'no-referrer'})).json())[0];if(!m)throw 0;
+async function addCoin(id){if(!ID_RE.test(id)||!me)return;const done=()=>{clear($('#ar'));$('#aq').value=''};
+ if(H.includes(id)){done();return restoreCoin(id)}
+ if([...B,...A].some(c=>c.id===id))return msg('Already on the list.');
+ try{msg('Adding…');const m=(await(await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids='+encodeURIComponent(id),{referrerPolicy:'no-referrer'})).json())[0];if(!m)throw 0;
   const c=cleanAdded({name:m.name,ticker:m.symbol,id:m.id,price:m.current_price,mcap:m.market_cap,vol:m.total_volume,ath:m.ath,athdate:str(m.ath_date).slice(0,10),below:m.ath_change_percentage,supply:m.circulating_supply});if(!c)throw 0;
-  A.push(c);save();refresh();done()}catch(_){msg("Couldn't load that coin from CoinGecko. Try again shortly.",'dn')}}
+  const {error}=await sb.from('coins').insert({coingecko_id:c.id,name:c.name,ticker:c.ticker,price:c.price,supply:c.supply,mcap:c.mcap,ath:c.ath,ath_date:c.athdate||null,below_ath:c.below,volume:c.vol,added_by:me.id});
+  if(error)return msg('Could not add: '+error.message,'dn');done();await reload()}catch(_){msg("Couldn't load that coin from CoinGecko. Try again shortly.",'dn')}}
+const SB_URL='https://rgohzlofcfkpsigqjcab.supabase.co',SB_KEY='sb_publishable_cZVafIc3SZNzGEdir7JqEA_Nz7LFv3N',SITE='https://s-chuch.github.io/crypto-watchlist/';
+const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,detectSessionInUrl:true,flowType:'pkce'}});
+let me=null,allRows=[],logRows=[],showRemoved=false,live=null;
+function fromRow(r){const id=typeof r.coingecko_id==='string'?r.coingecko_id:'';const st=id.startsWith('static:');
+ return{key:id,id:st?null:(ID_RE.test(id)?id:null),name:str(r.name,100)||id,ticker:str(r.ticker,20),utility:str(r.utility,2000),status:str(r.notes,2000),op:num(r.orig_price),osup:num(r.orig_supply),oath:num(r.orig_ath),
+  price:num(r.price),supply:num(r.supply),mcap:num(r.mcap),ath:num(r.ath),athdate:/^\d{4}-\d{2}-\d{2}$/.test(r.ath_date)?r.ath_date:'',below:num(r.below_ath),vol:num(r.volume),added:!!r.added_by,addedBy:r.added_by||null,removed:r.removed===true}}
+async function reload(){const [c,l]=await Promise.all([sb.from('coins').select('*').limit(1000),sb.from('change_log').select('*').order('created_at',{ascending:false}).limit(50)]);
+ if(c.error)throw c.error;logRows=l.error?[]:l.data;allRows=c.data.map(fromRow);
+ const emails={};[...logRows].reverse().forEach(r=>{if(r.action==='add')emails[r.coingecko_id]=str(r.user_email,120)});
+ allRows.forEach(c=>{c.addedEmail=emails[c.key]||'';if(live&&c.id&&live[c.id])applyLive(c,live[c.id])});
+ B=allRows.filter(c=>!c.added);A=allRows.filter(c=>c.added);H=allRows.filter(c=>c.removed).map(c=>c.key);renderLog();refresh()}
+function applyLive(c,x){if(num(x.usd)==null)return false;c.price=x.usd;if(num(x.usd_market_cap))c.mcap=x.usd_market_cap;if(num(x.usd_24h_vol)!=null)c.vol=x.usd_24h_vol;if(c.ath)c.below=(c.price/c.ath-1)*100;return true}
 async function init(){
  const so=$('#so');so.append(...cols.map(([k,l])=>h('option',{value:k},'Sort: '+l)));so.addEventListener('change',e=>{sortK=e.target.value;sortD=(sortK=='name'||sortK=='st')?1:-1;render()});
  $('#sd').addEventListener('click',()=>{sortD=-sortD;render()});$('#q').addEventListener('input',render);$('#aq').addEventListener('input',onSearch);
- $('#rh').addEventListener('click',()=>{if(confirm('Restore '+H.length+' hidden coin(s)?')){H=[];save();refresh()}});
- const d=await(await fetch('data.json')).json();B=d.coins;
- A=load('cw_added').map(cleanAdded).filter(Boolean).filter((c,i,a)=>a.findIndex(x=>x.id===c.id)===i&&!B.some(b=>b.id===c.id));
- const valid=new Set(B.map(key).concat(A.map(key)));H=[...new Set(load('cw_hidden').filter(k=>typeof k==='string'&&valid.has(k)))];save();rebuild();
- const ids=[...new Set([...B,...A].filter(c=>c.id).map(c=>c.id))];const badge=$('#badge');
- try{const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids='+ids.join(',')+'&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true',{referrerPolicy:'no-referrer'});if(!r.ok)throw 0;const p=await r.json();let n=0;
-  [...B,...A].forEach(c=>{const x=c.id&&p[c.id];if(x&&num(x.usd)!=null){n++;c.price=x.usd;if(num(x.usd_market_cap))c.mcap=x.usd_market_cap;if(num(x.usd_24h_vol)!=null)c.vol=x.usd_24h_vol;if(c.ath)c.below=(c.price/c.ath-1)*100}});if(!n)throw 0;save();
-  badge.className='badge live';badge.textContent='● Live · '+new Date().toLocaleTimeString()}catch(_){badge.textContent='Snapshot as of '+d.asof}
+ $('#rh').addEventListener('click',()=>{showRemoved=!showRemoved;renderRemoved()});
+ try{const {data}=await sb.auth.getSession();me=data.session?data.session.user:null}catch(_){}
+ sb.auth.onAuthStateChange((_e,session)=>{const n=session?session.user:null;if((n&&n.id)!==(me&&me.id)){me=n;render()}});
+ const badge=$('#badge');let src='shared';
+ try{await reload()}catch(_){src='file';const d=await(await fetch('data.json')).json();allRows=d.coins.map(c=>Object.assign({},c,{key:c.id||c.name}));B=allRows;A=[];H=[];refresh();
+  clear($('#log')).append(h('div',{class:'dn'},'Shared list unavailable; showing the saved snapshot.'))}
+ const ids=[...new Set(allRows.filter(c=>c.id).map(c=>c.id))];
+ try{const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids='+ids.join(',')+'&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true',{referrerPolicy:'no-referrer'});if(!r.ok)throw 0;live=await r.json();let n=0;
+  allRows.forEach(c=>{if(c.id&&live[c.id]&&applyLive(c,live[c.id]))n++});if(!n)throw 0;
+  badge.className='badge live';badge.textContent='● Live · '+new Date().toLocaleTimeString()}catch(_){live=null;badge.textContent='Snapshot as of 2026-10-12 20:30 ET'}
  refresh()}
 init();
