@@ -1,20 +1,25 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Crypto Watchlist</title>
 <style>
 :root{--bg:#0b0f17;--card:#141a26;--b:#232c3d;--t:#e6ebf5;--m:#8b96ab;--g:#22c55e;--r:#ef4444;--bl:#3b82f6;--am:#f59e0b}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+*{box-sizing:border-box}html,body{overflow-x:hidden;max-width:100%}body{overflow-wrap:anywhere}body{margin:0;background:var(--bg);color:var(--t);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
 .w{max-width:1200px;margin:auto;padding:20px}h1{margin:0;font-size:26px}header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
 .badge{padding:5px 12px;border-radius:99px;font-size:12px;font-weight:600;border:1px solid}.live{color:var(--g);border-color:var(--g)}.snap{color:var(--am);border-color:var(--am)}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:18px 0}.c{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:18px 0}.c{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:14px}
 .c .l{color:var(--m);font-size:12px;text-transform:uppercase;letter-spacing:.05em}.c .v{font-size:22px;font-weight:700;margin-top:4px}.c small{display:block;color:var(--m)}
 .legend{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:14px 18px;margin-bottom:16px}.legend h3{margin:0 0 8px}.legend ul{margin:0;padding-left:18px}.legend li{margin:4px 0}
 .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:middle}
 input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--b);background:var(--card);color:var(--t);font-size:15px;margin-bottom:10px}
-.tw{overflow-x:auto;border:1px solid var(--b);border-radius:12px}table{border-collapse:collapse;width:100%;min-width:760px}
+.tw{border:1px solid var(--b);border-radius:12px;overflow:hidden}table{border-collapse:collapse;width:100%;table-layout:auto}
 th{background:#101521;position:sticky;top:0;text-align:left;padding:10px;color:var(--m);font-weight:600;cursor:pointer;user-select:none;white-space:nowrap}th:hover{color:var(--t)}
-td{padding:9px 10px;border-top:1px solid var(--b);white-space:nowrap}tr.row{cursor:pointer}tr.row:hover{background:#18202f}
+td{padding:9px 8px;border-top:1px solid var(--b);white-space:nowrap}td:first-child{white-space:normal}tr.row{cursor:pointer}tr.row:hover{background:#18202f}
 .up{color:var(--g)}.dn{color:var(--r)}.tk{color:var(--m);font-size:12px;margin-left:6px}.st{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--b);color:var(--m)}
 .pill{padding:3px 8px;border-radius:6px;color:#111;font-weight:600}.s-dead{color:var(--r);border-color:var(--r)}.s-reb{color:var(--bl);border-color:var(--bl)}.s-amb{color:var(--am);border-color:var(--am)}
-tr.det td{white-space:normal;background:#0f1420;color:var(--m)}tr.det b{color:var(--t)}footer{color:var(--m);text-align:center;margin:24px 0;font-size:12px}
+tr.det td{white-space:normal;background:#0f1420;color:var(--m)}tr.det b{color:var(--t)}.ctl{display:flex;gap:8px;flex-wrap:wrap}.ctl input{flex:1 1 200px;min-width:0}select,.ctl button{padding:10px;border-radius:10px;border:1px solid var(--b);background:var(--card);color:var(--t);font-size:15px;margin-bottom:10px}
+#cl{display:none}.k{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:12px;margin-bottom:10px;cursor:pointer}.k .h{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.k .g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}.k .g div span{display:block;color:var(--m);font-size:11px}.k .x{margin-top:10px;color:var(--m);font-size:13px;border-top:1px solid var(--b);padding-top:8px}.k .x b{color:var(--t)}
+@media(max-width:1100px){.c-m50,.c-vol{display:none}}@media(max-width:900px){.c-ath,.c-chg{display:none}}
+@media(max-width:700px){.tw{display:none}#cl{display:block}.w{padding:12px}h1{font-size:22px}.c .v{font-size:18px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+footer{color:var(--m);text-align:center;margin:24px 0;font-size:12px}
 </style></head><body><div class="w">
 <header><div><h1>Crypto Watchlist</h1><div style="color:var(--m)">Prices from CoinGecko · 2023 sheet comparison</div></div><span id="badge" class="badge snap">Loading…</span></header>
 <div class="cards" id="cards"></div>
@@ -23,8 +28,8 @@ tr.det td{white-space:normal;background:#0f1420;color:var(--m)}tr.det b{color:va
 <li><b>% Below ATH:</b> a shading scale. <span class="dot" style="background:#ef4444"></span>Deep red = almost 100% below its all-time high, <span class="dot" style="background:#eab308"></span>yellow = in between, <span class="dot" style="background:#22c55e"></span>green = close to its high.</li>
 <li><b>Status:</b> <span class="st s-dead">red</span> dead or barely trading · <span class="st s-reb">blue</span> renamed or moved to a new token · <span class="st s-amb">amber</span> not sure the right coin was matched. <span class="st">static</span> = not on CoinGecko, so the price doesn't update.</li>
 </ul><div style="color:var(--m);margin-top:6px">Tap any row to see its notes. Tap a column header to sort.</div></div>
-<input id="q" placeholder="Search name, ticker or notes…">
-<div class="tw"><table><thead><tr id="hd"></tr></thead><tbody id="tb"></tbody></table></div>
+<div class="ctl"><input id="q" type="search" placeholder="Search name, ticker or notes…"><select id="so" aria-label="Sort by"></select><button id="sd" aria-label="Sort direction">▼</button></div>
+<div class="tw"><table><thead><tr id="hd"></tr></thead><tbody id="tb"></tbody></table></div><div id="cl"></div>
 <footer>Not financial advice. Data may be delayed or inaccurate. Do your own research.</footer></div>
 <script>
 const $=s=>document.querySelector(s);let C=[],sortK='mcap',sortD=-1,open=new Set();
@@ -39,11 +44,17 @@ const cols=[['name','Coin'],['price','Price'],['chg','vs 2023'],['mcap','Market 
 function val(c,k){return k=='chg'?chg(c):k=='st'?slab(c)+(c.id?'':'static'):c[k]}
 function render(){const q=$('#q').value.toLowerCase();let r=C.filter(c=>(c.name+' '+(c.ticker||'')+' '+(c.utility||'')+' '+(c.status||'')).toLowerCase().includes(q));
 r.sort((a,b)=>{let x=val(a,sortK),y=val(b,sortK);if(x==null)return 1;if(y==null)return-1;return(typeof x=='string'?x.localeCompare(y):x-y)*sortD});
-$('#hd').innerHTML=cols.map(([k,l])=>`<th data-k="${k}">${l}${k==sortK?(sortD>0?' ▲':' ▼'):''}</th>`).join('');
+$('#hd').innerHTML=cols.map(([k,l])=>`<th class="c-${k}" data-k="${k}">${l}${k==sortK?(sortD>0?' ▲':' ▼'):''}</th>`).join('');
 document.querySelectorAll('th').forEach(t=>t.onclick=()=>{const k=t.dataset.k;sortD=k==sortK?-sortD:(k=='name'||k=='st'?1:-1);sortK=k;render()});
 $('#tb').innerHTML=r.map((c,i)=>{const ch=chg(c),cl=ch==null?'':ch>=0?'up':'dn',k=scol(c);
-return`<tr class="row" data-i="${C.indexOf(c)}"><td class="${cl}"><b>${c.name}</b><span class="tk">${c.ticker||''}</span></td><td class="${cl}">${f(c.price)}</td><td class="${cl}">${pct(ch)}</td><td>${f(c.mcap)}</td><td><span class="pill" style="background:${grad(c.below)}">${pct(c.below)}</span></td><td>${f(c.ath)}</td><td>${f(c.vol)}</td><td>${f(c.mcap?c.mcap*50:null)}</td><td>${k?`<span class="st ${k}">${slab(c)}</span> `:''}${c.id?'':'<span class="st">static</span>'}</td></tr>`+
-(open.has(C.indexOf(c))?`<tr class="det"><td colspan="9"><b>Utility:</b> ${c.utility||'—'}<br><b>Status notes:</b> ${c.status||'—'}<br><b>2023 price:</b> ${f(c.op)} · <b>ATH date:</b> ${c.athdate||'—'} · <b>Supply:</b> ${c.supply?Number(c.supply).toLocaleString(undefined,{maximumFractionDigits:0}):'—'} · <b>Mcap @15x/20x/30x/40x:</b> ${[15,20,30,40].map(m=>f(c.mcap?c.mcap*m:null)).join(' / ')}</td></tr>`:'')}).join('');
+return`<tr class="row" data-i="${C.indexOf(c)}"><td class="${cl}"><b>${c.name}</b><span class="tk">${c.ticker||''}</span></td><td class="${cl}">${f(c.price)}</td><td class="c-chg ${cl}">${pct(ch)}</td><td>${f(c.mcap)}</td><td><span class="pill" style="background:${grad(c.below)}">${pct(c.below)}</span></td><td class="c-ath">${f(c.ath)}</td><td class="c-vol">${f(c.vol)}</td><td class="c-m50">${f(c.mcap?c.mcap*50:null)}</td><td>${k?`<span class="st ${k}">${slab(c)}</span> `:''}${c.id?'':'<span class="st">static</span>'}</td></tr>`+
+(open.has(C.indexOf(c))?`<tr class="det"><td colspan="9" style="white-space:normal"><b>Utility:</b> ${c.utility||'—'}<br><b>Status notes:</b> ${c.status||'—'}<br><b>2023 price:</b> ${f(c.op)} · <b>ATH date:</b> ${c.athdate||'—'} · <b>Supply:</b> ${c.supply?Number(c.supply).toLocaleString(undefined,{maximumFractionDigits:0}):'—'} · <b>Mcap @15x/20x/30x/40x:</b> ${[15,20,30,40].map(m=>f(c.mcap?c.mcap*m:null)).join(' / ')}</td></tr>`:'')}).join('');
+const chip=c=>{const k=scol(c);return (k?`<span class="st ${k}">${slab(c)}</span> `:'')+(c.id?'':'<span class="st">static</span>')};
+$('#cl').innerHTML=r.map(c=>{const i=C.indexOf(c),ch=chg(c),cl=ch==null?'':ch>=0?'up':'dn';return`<div class="k" data-i="${i}"><div class="h"><div class="${cl}"><b>${c.name}</b><span class="tk">${c.ticker||''}</span></div><div>${chip(c)}</div></div>
+<div class="g"><div><span>Price</span><b class="${cl}">${f(c.price)}</b></div><div><span>% below ATH</span><span class="pill" style="background:${grad(c.below)};display:inline-block;color:#111">${pct(c.below)}</span></div><div><span>Market cap</span>${f(c.mcap)}</div></div>
+${open.has(i)?`<div class="x"><b>vs 2023:</b> <span class="${cl}">${pct(ch)}</span> (2023: ${f(c.op)})<br><b>ATH:</b> ${f(c.ath)} (${c.athdate||'—'})<br><b>24h volume:</b> ${f(c.vol)}<br><b>Mcap @15x/20x/30x/40x/50x:</b> ${[15,20,30,40,50].map(m=>f(c.mcap?c.mcap*m:null)).join(' / ')}<br><b>Utility:</b> ${c.utility||'—'}<br><b>Status notes:</b> ${c.status||'—'}</div>`:'<div style="color:var(--m);font-size:12px;margin-top:6px">Tap for details ▾</div>'}</div>`}).join('');
+document.querySelectorAll('.k').forEach(t=>t.onclick=()=>{const i=+t.dataset.i;open.has(i)?open.delete(i):open.add(i);render()});
+$('#so').value=sortK;$('#sd').textContent=sortD>0?'▲':'▼';
 document.querySelectorAll('tr.row').forEach(t=>t.onclick=()=>{const i=+t.dataset.i;open.has(i)?open.delete(i):open.add(i);render()})}
 function cards(){const cmp=C.map(c=>[c,chg(c)]).filter(x=>x[1]!=null);const up=cmp.filter(x=>x[1]>=0).length;
 const tot=C.reduce((s,c)=>s+(c.mcap||0),0);const b=C.map(c=>c.below).filter(x=>x!=null).sort((a,b)=>a-b);const med=b.length%2?b[(b.length-1)/2]:(b[b.length/2-1]+b[b.length/2])/2;
@@ -56,5 +67,5 @@ $('#cards').innerHTML=`<div class="c"><div class="l">Coins tracked</div><div cla
 try{const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids='+ids.join(',')+'&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true');if(!r.ok)throw 0;const p=await r.json();let n=0;
 C.forEach(c=>{const x=c.id&&p[c.id];if(x&&x.usd!=null){n++;c.price=x.usd;if(x.usd_market_cap)c.mcap=x.usd_market_cap;if(x.usd_24h_vol!=null)c.vol=x.usd_24h_vol;if(c.ath)c.below=(c.price/c.ath-1)*100}});if(!n)throw 0;
 const b=$('#badge');b.className='badge live';b.textContent='● Live · '+new Date().toLocaleTimeString()}catch(e){$('#badge').textContent='Snapshot as of '+d.asof}
-cards();render()})();$('#q').oninput=render;
+cards();render()})();$('#q').oninput=render;$('#so').innerHTML=cols.map(([k,l])=>`<option value="${k}">Sort: ${l}</option>`).join('');$('#so').onchange=e=>{sortK=e.target.value;sortD=(sortK=='name'||sortK=='st')?1:-1;render()};$('#sd').onclick=()=>{sortD=-sortD;render()};
 </script></body></html>
