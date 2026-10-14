@@ -1,5 +1,5 @@
 'use strict';
-let side=null,me=null,trades=[],live={},fUser='',fCoin='',pick=null,st;
+let f_fp=null,side=null,me=null,trades=[],live={},fUser='',fCoin='',pick=null,st;
 const canEdit=()=>!!me&&(me.role==='editor'||me.role==='admin');
 const COIN_RE=/^[A-Za-z0-9][A-Za-z0-9._-]{0,59}$/;
 async function init(){me=await currentProfile();clear($('#navwrap')).append(navBar(me,'Trades'));await load();render()}
@@ -7,6 +7,12 @@ async function load(){const {data}=await sb.from('trades').select('*').order('tr
 function nowLocal(){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)}
 function form(){if(!canEdit())return h('div',{class:'vo'},!me?'👁 View-only mode — sign in on the dashboard to log trades':'👁 View-only mode — your account can view but not log trades');
  if(!side)return h('section',{class:'legend bs'},h('button',{class:'big buy',onclick:()=>{side='buy';render()}},'Buy'),h('button',{class:'big sell',onclick:()=>{side='sell';render()}},'Sell'));
+ const hint=h('span',{class:'ph'}),tot=h('div',{class:'tot'},'Total: —');
+ const upd=()=>{const q=Number(f.elements.q.value),p=Number(f.elements.p.value);tot.textContent='Total: '+(q>0&&p>0?money(q*p):'—')};
+ const fp=async()=>{if(!pick||!ID_RE.test(pick.id)){clear(hint);return}clear(hint).append('fetching…');const p=await livePrices([pick.id]);const el=f.elements.p;
+  if(p[pick.id]!=null){el.value=p[pick.id];clear(hint).append('live · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+' ',h('button',{type:'button',class:'rf',title:'Refresh price','aria-label':'Refresh price',onclick:fp},'↻'))}
+  else{el.value='';clear(hint).append(h('span',{class:'dn'},"couldn't fetch price "),h('button',{type:'button',class:'rf',title:'Try again','aria-label':'Try again',onclick:fp},'↻'))}upd()};
+ f_fp=fp;
  const res=h('div',{id:'ar'}),msg=h('div',{class:'mu'});const chosen=h('div',{class:'mu'},'No coin picked yet. Search, or type a ticker and press "Use as ticker".');
  const f=h('form',{class:'tf',onsubmit:async e=>{e.preventDefault();const el=f.elements;const q=Number(el.q.value),p=Number(el.p.value);
   if(!pick)return msg.textContent='Pick a coin first.';if(!(q>0))return msg.textContent='Quantity must be more than 0.';if(!(p>0))return msg.textContent='Price must be more than 0.';
@@ -14,19 +20,18 @@ function form(){if(!canEdit())return h('div',{class:'vo'},!me?'👁 View-only mo
   msg.textContent='Saving…';const {error}=await sb.from('trades').insert({coin:pick.id,coin_name:pick.name.slice(0,100),side:side,quantity:q,price_usd:p,traded_at:when.toISOString(),note:note||null});
   if(error)return msg.textContent='Could not save: '+error.message;pick=null;side=null;await load();render()}},
   h('input',{name:'cs',type:'search',placeholder:'Search coin (name or ticker)…',autocomplete:'off',oninput:e=>search(e.target.value,res,chosen,f)}),
-  h('button',{type:'button',class:'btn ghost sm',onclick:()=>{const v=f.elements.cs.value.trim();if(!COIN_RE.test(v))return msg.textContent='Ticker can use letters, numbers, . _ - (max 60).';pick={id:v.toUpperCase(),name:v.toUpperCase()};chosen.textContent='Ticker: '+pick.id+' (no live price)';clear(res)}},'Use as ticker'),
+  h('button',{type:'button',class:'btn ghost sm',onclick:()=>{const v=f.elements.cs.value.trim();if(!COIN_RE.test(v))return msg.textContent='Ticker can use letters, numbers, . _ - (max 60).';pick={id:v.toUpperCase(),name:v.toUpperCase()};chosen.textContent='Ticker: '+pick.id+' (no live price — enter it yourself)';clear(res);f.elements.p.value='';f_fp&&f_fp()}},'Use as ticker'),
   res,chosen,
   h('div',{class:'tg'},
-   h('label',{},'Quantity',h('input',{name:'q',type:'number',step:'any',min:'0',inputmode:'decimal',required:true})),
-   h('label',{},'Price (USD)',h('input',{name:'p',type:'number',step:'any',min:'0',inputmode:'decimal',required:true})),
+   h('label',{},'Quantity',h('input',{name:'q',oninput:()=>upd(),type:'number',step:'any',min:'0',inputmode:'decimal',required:true})),
+   h('label',{},h('span',{},'Price (USD) ',hint),h('input',{name:'p',oninput:()=>upd(),type:'number',step:'any',min:'0',inputmode:'decimal',required:true})),
    h('label',{},'Date & time',h('input',{name:'d',type:'datetime-local',value:nowLocal()}))),
-  h('textarea',{name:'n',maxlength:'280',placeholder:'Note (optional, max 280 characters)',rows:'2'}),h('div',{class:'fb'},h('button',{class:'big '+side,type:'submit'},'Confirm '+side),h('button',{type:'button',class:'btn ghost',onclick:()=>{side=null;pick=null;render()}},'Cancel')),msg);
+  tot,h('textarea',{name:'n',maxlength:'280',placeholder:'Note (optional, max 280 characters)',rows:'2'}),h('div',{class:'fb'},h('button',{class:'big '+side,type:'submit'},'Confirm '+side),h('button',{type:'button',class:'btn ghost',onclick:()=>{side=null;pick=null;render()}},'Cancel')),msg);
  return h('section',{class:'legend tf-'+side},h('h3',{class:side==='buy'?'up':'dn'},side==='buy'?'Buy':'Sell'),f)}
 function search(q,res,chosen,f){clearTimeout(st);q=q.trim();if(q.length<2){clear(res);return}
  st=setTimeout(async()=>{try{const r=await(await fetch('https://api.coingecko.com/api/v3/search?query='+encodeURIComponent(q.slice(0,50)),{referrerPolicy:'no-referrer'})).json();
   const list=(Array.isArray(r&&r.coins)?r.coins:[]).filter(c=>c&&typeof c.id==='string'&&ID_RE.test(c.id)).slice(0,6);
-  clear(res).append(...list.map(c=>h('div',{class:'ar',onclick:async()=>{pick={id:c.id,name:str(c.name,100)};clear(res);chosen.textContent='Coin: '+pick.name+' ('+str(c.symbol,20)+') — fetching price…';
-   const p=await livePrices([c.id]);if(p[c.id]!=null){f.elements.p.value=p[c.id];chosen.textContent='Coin: '+pick.name+' ('+str(c.symbol,20)+') · live price '+money(p[c.id])}else chosen.textContent='Coin: '+pick.name+' (live price unavailable)'}},
+  clear(res).append(...list.map(c=>h('div',{class:'ar',onclick:()=>{pick={id:c.id,name:str(c.name,100)};clear(res);chosen.textContent='Coin: '+pick.name+' ('+str(c.symbol,20)+')';f_fp&&f_fp()}},
    h('span',{},h('b',{},str(c.name,100)),h('span',{class:'tk'},str(c.symbol,20))),h('span',{class:'mu'},'Pick'))))}catch(_){clear(res).append(h('div',{class:'dn'},'Search failed (rate limit?). Try again shortly.'))}},400)}
 async function del(t){if(!confirm('Delete this trade?'))return;const {data,error}=await sb.from('trades').delete().eq('id',t.id).select('id');if(error||!data||!data.length)return alert('Could not delete');await load();render()}
 function render(){const m=clear($('#main'));m.append(form());
