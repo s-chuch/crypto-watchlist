@@ -22,7 +22,7 @@ function cleanAdded(x){if(!x||typeof x!=='object'||typeof x.id!=='string'||!ID_R
 // ---- render ----
 const pill=c=>h('span',{class:'pill',style:{background:grad(c.below)}},pct(c.below));
 const chips=c=>[c.added&&h('span',{class:'st s-add'},c.addedBy&&me&&c.addedBy===me.id?'Added by you':'Added by '+(c.addedEmail||'a member')),' ',scol(c)&&h('span',{class:'st '+scol(c)},slab(c)),' ',!c.id&&h('span',{class:'st'},'static')];
-const rmb=c=>canEdit()?h('span',{},h('button',{class:'rm',onclick:e=>{e.stopPropagation();removeCoin(key(c))}},'Remove '+(c.ticker||c.name)),' ',isAdmin()&&h('button',{class:'rm',onclick:e=>{e.stopPropagation();hardDelete(key(c))}},'Delete permanently')):null;
+const rmb=c=>canEdit()?h('span',{},h('button',{class:'rm',onclick:e=>{e.stopPropagation();removeCoin(key(c))}},'Remove '+(c.ticker||c.name)),):null;
 const nm=(c,cl)=>h('div',{class:cl},h('b',{},c.name),h('span',{class:'tk'},c.ticker||''));
 function details(c,ch,cl,full){const L=(k,...v)=>[h('b',{},k+': '),...v,h('br')];
  return[...(full?[...L('vs 2023',h('span',{class:cl},pct(ch)),' (2023: '+f(c.op)+')'),...L('ATH',f(c.ath)+' ('+(c.athdate||'—')+')'),...L('24h volume',f(c.vol))]:[...L('2023 price',f(c.op)+' · ATH date: '+(c.athdate||'—'))]),
@@ -86,20 +86,14 @@ async function loadProfile(){prof=null;if(!me)return;const {data}=await sb.from(
  if(data&&UN_RE.test(data.username)&&ROLE_TXT[data.role])prof=data}
 const canEdit=()=>!!prof&&(prof.role==='editor'||prof.role==='admin'),isAdmin=()=>!!prof&&prof.role==='admin';
 let usersOpen=false,users=[];
-async function renderUsers(){const box=$('#users');if(!isAdmin()){box.hidden=true;return}box.hidden=false;
- clear(box).append(h('h3',{},'Users ',h('button',{class:'btn ghost sm',onclick:async()=>{usersOpen=!usersOpen;if(usersOpen)await loadUsers();renderUsers()}},usersOpen?'Hide':'Show')));
- if(!usersOpen)return;const order={pending:0,editor:1,viewer:2,admin:3};
- const list=[...users].sort((x,y)=>order[x.role]-order[y.role]||String(y.created_at).localeCompare(x.created_at));
- box.append(...list.map(u=>{const self=u.id===me.id;const b=(r,l)=>u.role!==r&&h('button',{class:'rm ok sm',onclick:()=>setRole(u,r)},l);
-  return h('div',{class:'urow'+(u.role==='pending'?' pend':'')},h('span',{},h('b',{},u.username),' ',h('span',{class:'st'},u.role),h('span',{class:'lt'},' joined '+new Date(u.created_at).toLocaleDateString())),
-   self||u.role==='admin'?h('span',{class:'mu'},self?'you':''):h('span',{class:'ubtn'},b('editor','Approve as editor'),b('viewer','Set viewer'),u.role!=='pending'&&h('button',{class:'rm sm',onclick:()=>setRole(u,'pending')},'Revoke')))}))}
+function renderUsers(){const n=$('#adminlink');if(n)n.hidden=!isAdmin()}
 async function loadUsers(){const {data,error}=await sb.from('profiles').select('id,username,role,created_at').limit(500);users=error?[]:data.filter(u=>UN_RE.test(u.username)&&ROLE_TXT[u.role])}
 async function setRole(u,r){if(!confirm('Change '+u.username+' to '+r+'?'))return;const {data,error}=await sb.from('profiles').update({role:r}).eq('id',u.id).select('id');
  if(error||!data||!data.length)return alert('Could not change role'+(error?': '+error.message:''));await loadUsers();await reload()}
 function authMsg(t,c){const m=$('#am');if(m)clear(m).append(h('div',{class:c||'mu'},t))}
 function renderLog(){const l=clear($('#log'));if(!logRows.length)return l.append(h('div',{class:'mu'},'No changes yet.'));
  const A={add:'added',remove:'removed',restore:'restored',delete:'permanently deleted',role_change:'changed role:'};
- l.append(...logRows.filter(r=>A[r.action]).map(r=>h('div',{class:'lg'},h('span',{class:'lt'},new Date(r.created_at).toLocaleString()),h('span',{},h('b',{},str(r.username,20)||'someone'),' ',h('span',{class:'la la-'+r.action},A[r.action]),' ',r.action==='role_change'?str(r.detail,100):(str(r.coin_name,100)||r.coingecko_id)))))}
+ l.append(...logRows.filter(r=>A[r.action]&&r.action!=='role_change').map(r=>h('div',{class:'lg'},h('span',{class:'lt'},new Date(r.created_at).toLocaleString()),h('span',{},h('b',{},str(r.username,20)||'someone'),' ',h('span',{class:'la la-'+r.action},A[r.action]),' ',r.action==='role_change'?str(r.detail,100):(str(r.coin_name,100)||r.coingecko_id)))))}
 const msg=(t,cls)=>clear($('#ar')).append(h('div',{class:cls||'mu'},t));
 let st;
 function onSearch(e){clearTimeout(st);const q=e.target.value.trim();if(q.length<2){clear($('#ar'));return}
@@ -122,7 +116,7 @@ let me=null,prof=null,allRows=[],logRows=[],showRemoved=false,live=null;
 function fromRow(r){const id=typeof r.coingecko_id==='string'?r.coingecko_id:'';const st=id.startsWith('static:');
  return{key:id,id:st?null:(ID_RE.test(id)?id:null),name:str(r.name,100)||id,ticker:str(r.ticker,20),utility:str(r.utility,2000),status:str(r.notes,2000),op:num(r.orig_price),osup:num(r.orig_supply),oath:num(r.orig_ath),
   price:num(r.price),supply:num(r.supply),mcap:num(r.mcap),ath:num(r.ath),athdate:/^\d{4}-\d{2}-\d{2}$/.test(r.ath_date)?r.ath_date:'',below:num(r.below_ath),vol:num(r.volume),added:!!r.added_by,addedBy:r.added_by||null,removed:r.removed===true}}
-async function reload(){const [c,l]=await Promise.all([sb.from('coins').select('*').limit(1000),sb.from('change_log').select('*').order('created_at',{ascending:false}).limit(50)]);
+async function reload(){const [c,l]=await Promise.all([sb.from('coins').select('*').limit(1000),sb.from('change_log').select('*').neq('action','role_change').order('created_at',{ascending:false}).limit(50)]);
  if(c.error)throw c.error;logRows=l.error?[]:l.data;allRows=c.data.map(fromRow);
  const emails={};[...logRows].reverse().forEach(r=>{if(r.action==='add')emails[r.coingecko_id]=str(r.username,20)});
  allRows.forEach(c=>{c.addedEmail=emails[c.key]||'';if(live&&c.id&&live[c.id])applyLive(c,live[c.id])});
