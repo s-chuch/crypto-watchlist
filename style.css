@@ -50,3 +50,5 @@ footer a{color:var(--m)}
 .bs{grid-template-columns:repeat(2,minmax(0,1fr))}.big:disabled{opacity:.35;cursor:not-allowed;filter:grayscale(.4)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:calc(100% - 32px);background:#14532d;color:#dcfce7;border:1px solid var(--g);padding:12px 18px;border-radius:12px;font-weight:600;z-index:50;box-shadow:0 10px 30px rgba(0,0,0,.4)}
 .pinfo{font-size:15px}.pinfo b{color:var(--t)}
+.aq{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;grid-column:1/-1}.aq label{display:flex;flex-direction:column;gap:4px;color:var(--m);font-size:12px;min-width:0}.hintp{font-size:12px}
+@media(min-width:900px){.tg:has(.aq){grid-template-columns:2fr 1fr}.aq{grid-column:auto}}
