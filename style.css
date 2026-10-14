@@ -33,3 +33,5 @@ footer a{color:var(--m)}
 .notice{width:100%;margin-top:8px;padding:10px 12px;border-radius:10px;border:1px solid var(--am);color:var(--am);background:rgba(245,158,11,.08)}
 .urow{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px;padding:9px 10px;border-top:1px solid var(--b)}.urow.pend{background:rgba(245,158,11,.1);border-left:3px solid var(--am)}.ubtn{display:flex;flex-wrap:wrap;gap:6px}.ubtn .rm{margin:0}
 @media(max-width:700px){.tabs{justify-content:flex-start}.si input{flex:1 1 100%}}
+.brand{color:var(--t);text-decoration:none}.brand span{color:var(--g)}
+.vo{margin:12px 0 0;padding:8px 12px;border-radius:10px;border:1px solid var(--b);background:rgba(139,150,171,.08);color:var(--m);font-size:13px;text-align:center}

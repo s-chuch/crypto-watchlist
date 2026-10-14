@@ -73,6 +73,7 @@ function renderAuth(){const a=clear($('#auth'));
    h('button',{class:'btn',type:'submit'},up?'Create account':'Sign in')),h('div',{id:'am'}))}
  const ce=canEdit();$('#addbox').hidden=!ce;$('#addhint').hidden=ce;
  $('#addhint').textContent=!me?'Sign in to add or remove coins. Viewing is open to everyone.':(prof&&prof.role==='viewer')?'Your account is view-only.':prof&&prof.role==='pending'?'Your account is waiting for admin approval.':'';
+ const vo=$('#vo');const ro=!ce;vo.hidden=!ro;vo.textContent=!me?'👁 View-only mode — sign in to edit':(prof&&prof.role==='pending')?'👁 View-only mode — waiting for admin approval':'👁 View-only mode — your account can view but not edit';$('#addhint').hidden=true;
  renderUsers()}
 async function onAuth(e){e.preventDefault();const f=e.target.elements,un=f.un.value.trim().toLowerCase(),pw=f.pw.value;
  if(!UN_RE.test(un))return authMsg('Username must be 3–20 characters: letters, numbers or _.','dn');
