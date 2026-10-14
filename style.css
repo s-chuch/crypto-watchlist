@@ -1,6 +1,6 @@
 
 :root{--bg:#0b0f17;--card:#141a26;--b:#232c3d;--t:#e6ebf5;--m:#8b96ab;--g:#22c55e;--r:#ef4444;--bl:#3b82f6;--am:#f59e0b}
-*{box-sizing:border-box}html,body{overflow-x:hidden;max-width:100%}body{overflow-wrap:anywhere}body{margin:0;background:var(--bg);color:var(--t);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+*{box-sizing:border-box}html{overflow-x:hidden;max-width:100%}body{overflow-x:clip;max-width:100%}body{overflow-wrap:anywhere}body{margin:0;background:var(--bg);color:var(--t);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
 .w{max-width:1200px;margin:auto;padding:20px}h1{margin:0;font-size:26px}header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
 .badge{padding:5px 12px;border-radius:99px;font-size:12px;font-weight:600;border:1px solid}.live{color:var(--g);border-color:var(--g)}.snap{color:var(--am);border-color:var(--am)}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:18px 0}.c{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:14px}
@@ -60,10 +60,11 @@ footer a{color:var(--m)}
 .nav a[hidden]{display:none}.ni{font-size:18px;line-height:1}
 .navuser{text-align:right;color:var(--m);font-size:13px;margin-bottom:4px}.navuser a{color:var(--bl)}
 @media(max-width:700px){
- body{padding-bottom:calc(80px + env(safe-area-inset-bottom))}
- .nav{position:fixed;left:0;right:0;bottom:0;z-index:40;margin:0;gap:6px;flex-wrap:nowrap;padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:rgba(11,15,23,.96);border-top:1px solid var(--b);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+ .nav{position:sticky;top:0;z-index:40;margin:10px -12px 8px;gap:6px;flex-wrap:nowrap;padding:calc(8px + env(safe-area-inset-top)) 8px 8px;background:rgba(11,15,23,.96);border-bottom:1px solid var(--b);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
  .nav a{flex:1 1 0;min-width:0;flex-direction:column;gap:2px;min-height:60px;padding:4px 2px;border-radius:14px;font-size:15px}
  .nav a .ni{font-size:20px}
  .navuser{text-align:left}
- .toast{bottom:calc(88px + env(safe-area-inset-bottom))}
+ .toast{bottom:calc(20px + env(safe-area-inset-bottom))}
 }
+
+#navwrap,.navbox{display:contents}

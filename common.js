@@ -13,6 +13,6 @@ async function currentProfile(){try{const {data}=await sb.auth.getSession();cons
  const r=await sb.from('profiles').select('id,username,role').eq('id',u.id).maybeSingle();const p=r.data;return p&&UN_RE.test(p.username)&&ROLES.includes(p.role)?p:{id:u.id,username:'',role:'pending'}}catch(_){return null}}
 const cap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):'';
 function navBar(p,active){const links=[['./','Home','🏠'],['app.html','Dashboard','📊'],['trades.html','Trades','💱']];if(p&&p.role==='admin')links.push(['admin.html','Admin','🛡️']);
- return h('div',{},h('nav',{class:'nav','aria-label':'Main'},links.map(([u,l,i])=>h('a',{href:u,class:l===active?'on':null,'aria-current':l===active?'page':null},h('span',{class:'ni','aria-hidden':'true'},i),l))),
+ return h('div',{class:'navbox'},h('nav',{class:'nav','aria-label':'Main'},links.map(([u,l,i])=>h('a',{href:u,class:l===active?'on':null,'aria-current':l===active?'page':null},h('span',{class:'ni','aria-hidden':'true'},i),l))),
   h('div',{class:'navuser'},p?cap(p.username)+' ('+p.role+')':h('a',{href:'app.html'},'Sign in')))}
 async function livePrices(ids){ids=[...new Set(ids.filter(i=>ID_RE.test(i)))];if(!ids.length)return{};try{const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids='+ids.join(',')+'&vs_currencies=usd',{referrerPolicy:'no-referrer'});if(!r.ok)return{};const p=await r.json();const o={};for(const i of ids)if(p[i]&&num(p[i].usd)!=null)o[i]=p[i].usd;return o}catch(_){return{}}}
