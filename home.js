@@ -11,6 +11,6 @@ const num=v=>typeof v==='number'&&isFinite(v)?v:null;
  const ids=rows.filter(r=>/^[a-z0-9-]+$/.test(r.id)).map(r=>r.id);let live=false;
  try{const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids='+ids.join(',')+'&vs_currencies=usd&include_market_cap=true',{referrerPolicy:'no-referrer'});if(!r.ok)throw 0;const p=await r.json();
   rows.forEach(x=>{const q=p[x.id];if(q&&num(q.usd)!=null){x.price=q.usd;if(num(q.usd_market_cap))x.mcap=q.usd_market_cap;live=true}})}catch(_){}
- const cmp=rows.filter(x=>x.op&&x.price&&!/^(g-token)$/.test(x.id)),up=cmp.filter(x=>x.price>=x.op).length;
+ const cmp=rows.filter(x=>x.op&&x.price&&!/^(g-token|static:vault-tech)$/.test(x.id)),up=cmp.filter(x=>x.price>=x.op).length;
  set('s-n',String(rows.length));set('s-mc',f(rows.reduce((s,x)=>s+(x.mcap||0),0)));set('s-up',up+' / '+cmp.length,'up');
  set('s-live',live?'● Live prices · '+new Date().toLocaleTimeString():'Showing the saved snapshot (live prices unavailable).')})();
